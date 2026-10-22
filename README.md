@@ -68,3 +68,29 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+## Menu API on Netlify
+
+The deployed React page uses the same-origin `/api/foodData` Netlify Function.
+It accepts GET and POST and returns `[foodItems, foodCategories]`, preserving the
+existing frontend format. `/api/health` returns JSON to confirm the function
+is deployed; it does not check database connectivity.
+
+Menu data is stored in Netlify Database. The schema is in `db/schema.ts`, and
+migrations in `netlify/database/migrations` are applied by Netlify during deploy.
+Generate future schema migrations with `npx drizzle-kit generate --name <name>`.
+Do not run the old Express server to serve the deployed Netlify frontend.
+For local Netlify development, use `netlify dev --port 8889`.
+
+### Existing menu records
+
+The initial database contains no menu items. Existing MongoDB records have not
+been imported. Export only the non-secret `food_items` and `foodCategory`
+collections to prepare a data migration; never include connection strings or
+passwords. Preserve category and item `_id` values as `id`, map `CategoryName`
+to the category `name`, map item categories to `category_id`, and map `img` to
+`image`. Preserve `options` as an array of objects mapping size to price. Data
+must be imported before the original menu can appear.
+
+This change serves the menu only. The legacy Express login, order, and payment
+routes have not been migrated to Netlify Functions.

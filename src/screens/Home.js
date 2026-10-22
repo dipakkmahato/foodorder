@@ -9,31 +9,32 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [foodCat, setFoodCat] = useState([]);
   const [foodItem, setFoodItem] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const loadData = async () => {
+    setLoading(true);
+    setError("");
     try {
       const response = await fetch(`${API_BASE_URL}/api/foodData`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(15000),
       });
-      const text = await response.text();
-
-      if (!response.ok) {
-        console.error("Failed to fetch /api/foodData:", text || response.status);
-        setFoodItem([]);
-        setFoodCat([]);
-        return;
+      if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) {
+        throw new Error("Menu request failed");
       }
-
-      const data = text ? JSON.parse(text) : [];
-      setFoodItem(Array.isArray(data[0]) ? data[0] : []);
-      setFoodCat(Array.isArray(data[1]) ? data[1] : []);
-    } catch (err) {
-      console.error("Error loading food data:", err);
+      const data = await response.json();
+      if (!Array.isArray(data) || !Array.isArray(data[0]) || !Array.isArray(data[1])) {
+        throw new Error("Invalid menu response");
+      }
+      setFoodItem(data[0]);
+      setFoodCat(data[1]);
+    } catch {
+      setError("We couldn't load the menu. Please try again.");
       setFoodItem([]);
       setFoodCat([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -118,7 +119,21 @@ export default function Home() {
           </button>
         </div>
       </div>
-      <div className="container">
+      <div className="container" aria-busy={loading}>
+        {loading && <p className="m-3" role="status">Loading menu…</p>}
+        {error && (
+          <div className="alert alert-danger my-3" role="alert">
+            <p>{error}</p>
+            <button className="btn btn-outline-danger" onClick={loadData}>Try again</button>
+          </div>
+        )}
+        {!loading && !error && (foodCat.length === 0 || foodItem.length === 0) && (
+          <p className="m-3" role="status">No menu items are available yet. Please check back soon.</p>
+        )}
+        {!loading && !error && foodItem.length > 0 && !foodItem.some(
+          (item) => item.name.toLowerCase().includes(search.toLowerCase())
+        ) && <p className="m-3" role="status">No items match your search.</p>}
+
 
 {foodCat.length > 0 // Check if foodCat has any elements
   ? foodCat.map((data) => {

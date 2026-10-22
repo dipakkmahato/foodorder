@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "build"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[dev]
+  command = "npx react-scripts start"
+  targetPort = 3000
+  port = 8889
+  framework = "create-react-app"
